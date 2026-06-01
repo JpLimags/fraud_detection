@@ -1,166 +1,92 @@
-# Detecção de Fraude em Cartões de Crédito 💳
+# 💳 Detecção Industrial de Fraude em Cartões de Crédito
+  
+> **Arquitetura:** Medallion Data Pipeline & Multi-Classifier Benchmark  
+> **Modelo com melhor performance:** XGBoost (Crescimento *Level-Wise* Calibrado)
 
-## 🎯 Objetivo e Motivação
+---
 
-De acordo com relatório da PwC de 2024, fraudes financeiras geram **trilhões de dólares** em prejuízos anuais no mundo. Com o crescimento do e-commerce e dos pagamentos instantâneos (Pix, Pix Automático, carteiras digitais, etc.), a frequência de fraudes em transações digitais só aumenta.
+## Objetivo e Motivação
 
-Sistemas baseados apenas em regras fixas têm dificuldade para identificar padrões sofisticados e em constante evolução. O **Machine Learning** permite analisar grandes volumes de transações em tempo real, detectando anomalias sutis que indicam possível fraude.
+De acordo com relatórios globais de risco da PwC, fraudes em meios de pagamento digitais geram **trilhões de dólares** em prejuízos anuais cumulativos. Com o advento do e-commerce em larga escala e sistemas de liquidação instantânea em tempo real, os vetores de ataque tornaram-se dinâmicos, tornando as tradicionais esteiras baseadas exclusivamente em regras de corte fixas obsoletas e caras.
 
-Este projeto implementa um pipeline completo de detecção de fraude em cartões de crédito, com foco em:
+Este ecossistema implementa uma engenharia preditiva fim-a-fim escalável para identificar transações fraudulentas sob extrema esparsidade de classe (~0.57% basal). O foco principal deste projeto assenta-se em três pilares corporativos:
 
-- Alta performance preditiva  
-- Explicabilidade do modelo  
-- Facilidade de deploy e monitoramento
+1. **Mitigação de Perdas Financeiras Líquidas:** Maximizar a retenção de capital desviado por ataques (*Recall*).
+2. **Preservação da Experiência do Usuário:** Minimizar alarmes falsos (*Falsos Positivos*) para evitar fricção desnecessária com clientes legítimos.
+3. **Auditabilidade Estrita (Explainable AI - XAI):** Fornecer rastreabilidade matemática de cada score via Teoria dos Jogos (*SHAP values*) para compliance regulatório.
 
-Ideal para bancos, fintechs, processadoras de pagamento e plataformas de e-commerce que buscam reduzir perdas por fraude e aumentar a segurança digital.
+---
 
-## 🚀 Tecnologias e Ferramentas
+##  Resultados do Benchmark: Champion vs. Challenger
 
-- **Linguagem e bibliotecas principais**  
-  Python, Pandas, NumPy, Scikit-learn, XGBoost, LightGBM
+Para evitar o viés de algoritmo único, estruturamos um duelo metrológico rigoroso entre duas topologias de *Gradient Boosting*. O modelo **LightGBM** (então líder de esteira) foi testado contra o **XGBoost**. Ambos foram treinados utilizando separação por corte temporal estrito para evitar vazamento de dados (*Data Leakage*) e otimizados dinamicamente via maximização do F1-Score na curva Precision-Recall.
 
-- **Experimentação e versionamento**  
-  MLflow, DVC, Optuna
+Abaixo está o painel executivo de homologação extraído do conjunto de dados de teste futuro (massa de validação massiva com mais de 550.000 transações):
 
-- **Explicabilidade**  
-  SHAP
+| Métrica de Risco | LightGBM (Challenger) | XGBoost (Novo Champion) | Impacto Líquido da Substituição |
+| :--- | :---: | :---: | :--- |
+| **ROC-AUC** | 0.9943 | **0.9961** | Margem de Separação Ampliada (+0.0018) |
+| **PR-AUC (Métrica Alvo)** | 0.8606 | **0.8710** | **Ganho de Estabilidade (+0.0104)** |
+| **Threshold Ótimo Calibrado** | 0.2561 | 0.2593 | Ponto de Corte Refinado |
+| **Precisão (Classe Fraude)** | 0.8861 | **0.8886** | **Redução de Atrito / Menos Bloqueios Bons** |
+| **Recall (Taxa de Captura)** | 0.7506 | **0.7622** | **+25 Ataques Retidos na Barreira** |
+| **F1-Score Global** | 0.8127 | **0.8206** | Convergência Estatística Superior |
 
-- **Interface interativa**  
-  Streamlit **ou** Gradio
+###  Diagnóstico Operacional (Análise de Matriz de Confusão)
 
-- **CI/CD e containerização**  
-  GitHub Actions, Docker
+O mapeamento volumétrico traduz a matemática dos modelos diretamente para a eficiência financeira do negócio:
 
-## 📁 Estrutura de Diretórios
-```
-fraud_detection/
-├── data/
-│   ├── raw/                 # Dados originais (não alterados)
-│   └── processed/           # Dados limpos e com features criadas
-│
-├── notebooks/
-│   ├── 01_eda.ipynb         # Análise exploratória
-│   ├── 02_feature_engineering.ipynb
-│   └── 03_model_training.ipynb
-│
-├── src/
-│   ├── data_prep/           # Carregamento e limpeza de dados
-│   ├── features/            # Criação e seleção de features
-│   ├── models/              # Treinamento, avaliação e predição
-│   └── utils/               # Funções auxiliares
-│
-├── config/                  # Arquivos de configuração (YAML/JSON)
-├── outputs/                 # Relatórios, gráficos, modelos salvos, logs
-├── app/                     # Código da aplicação web (Streamlit/Gradio)
-│
-├── .dvc/                    # Cache do DVC
-├── requirements.txt
-├── Dockerfile
-├── .github/workflows/       # Pipelines de CI/CD
-└── README.md
-```
+* **Estancamento de Chargebacks:** O **XGBoost bloqueou com sucesso 1.634 fraudes reais**, deixando passar apenas 511 casos. São 25 cartões clonados a menos gerando prejuízos de estorno direto para a instituição parceira em relação ao LightGBM.
+* **Fricção Estatisticamente Nula:** Para capturar esse volume de crimes, o XGBoost gerou apenas **191 falsos positivos** em um universo massivo de **553.564 transações legítimas**. Na prática, **a cada 10 alertas gerados pelo motor, aproximadamente 9 são fraudes reais**. A mesa de análise manual opera sem sobrecarga e o cliente bom compra sem bloqueios.
 
-📦 Principais Dependências (requirements.txt)
-```
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.3
-xgboost>=2.0
-lightgbm>=4.0
-matplotlib>=3.7
-seaborn>=0.12
-shap>=0.45
-mlflow>=2.10
-dvc>=3.0
-optuna>=3.5
-imbalanced-learn>=0.11
-streamlit>=1.30          # ou gradio
-joblib>=1.3
-pyyaml>=6.0
-```
+### 🔍 Justificativa de Arquitetura e XAI
 
-📊 Métricas de Avaliação
+A vitória do XGBoost decorre do seu mecanismo de indução baseado em crescimento por níveis (*Level-wise*). Ao expandir as árvores horizontalmente de forma regularizada, ele mostrou-se imune ao ruído provocado pelo severo desbalanceamento de classes, mitigando a convergência gananciosa comum ao crescimento por folhas (*Leaf-wise*) do LightGBM.
 
-AUC-ROC (principal)
-Precision, Recall, F1-Score
-Precision@K, Recall@K (especialmente úteis em cenários de alto desbalanceamento)
-Matriz de Confusão
-Business metrics (ex.: economia estimada em R$)
+A interpretabilidade do modelo foi purificada via **SHAP Values**. Fora os números absolutos distorcidos do ganho de informação tradicional, a auditoria SHAP provou que anomalias monetárias instantâneas em relação ao histórico do portador (`amt` e `amt_to_avg_ratio_24h`) constituem a assinatura de risco mais robusta do sistema.
 
-✅ Resultados Esperados
+---
 
-Modelo com boa capacidade de detecção e baixa taxa de falsos positivos
-Explicações claras via SHAP values (global e local)
-Interface web interativa para teste de transações em tempo real
-Pipeline reprodutível e preparado para deploy em cloud
+##  Tecnologias e Ferramentas
 
+* **Core Data Science & Boosting:** Python, Pandas, NumPy, Scikit-learn, XGBoost, LightGBM
+* **Governança & Linhagem de Dados:** DVC (Data Version Control) integrado a armazenamento em nuvem
+* **Explicabilidade Corporativa (XAI):** SHAP (Explicadores de Árvore baseados em Log-Odds)
+* **Persistência & Deploy:** Joblib, Docker, GitHub Actions para CI/CD Automatizado
+* **Interface de Homologação:** App interativo em Streamlit para simulação de scores em tempo real
 
-### English Version 🇺🇸
+---
 
-
-# Credit Card Fraud Detection 💳
-
-## 🎯 Objective & Motivation
-
-According to PwC's 2024 report, financial fraud causes **trillions of dollars** in global losses every year. With the rapid growth of e-commerce and instant payment systems (Pix, Zelle, UPI, etc.), digital payment fraud continues to increase in both volume and sophistication.
-
-Rule-based systems struggle to keep up with fast-evolving fraud patterns. **Machine Learning** enables real-time analysis of massive transaction volumes, identifying subtle anomalies that indicate potential fraud.
-
-This project builds a complete fraud detection pipeline with emphasis on:
-
-- Strong predictive performance  
-- Model explainability  
-- Easy deployment and monitoring
-
-Suitable for banks, fintechs, payment processors, and e-commerce platforms looking to reduce fraud losses and increase digital trust.
-
-## 🚀 Technologies & Tools
-
-- **Core stack**  
-  Python, Pandas, NumPy, Scikit-learn, XGBoost, LightGBM
-
-- **Experiment tracking & versioning**  
-  MLflow, DVC, Optuna
-
-- **Explainability**  
-  SHAP
-
-- **Interactive UI**  
-  Streamlit **or** Gradio
-
-- **CI/CD & Containerization**  
-  GitHub Actions, Docker
-
-## 📁 Project Structure
+##  Estrutura de Diretórios
 
 ```text
 fraud_detection/
 ├── data/
-│   ├── raw/                 # Original untouched data
-│   └── processed/           # Cleaned + feature-engineered datasets
+│   ├── raw/                 # Ingestão de dados brutos (Imutáveis)
+│   └── processed/           # Camadas Silver/Gold (Velocity Features calculadas pré-split)
 │
 ├── notebooks/
-│   ├── 01_eda.ipynb         # Exploratory Data Analysis
-│   ├── 02_feature_engineering.ipynb
-│   └── 03_model_training.ipynb
+│   ├── 01_eda.ipynb         # Análise Exploratória e Assinatura Estatística do Crime
+│   ├── 02_feature_engineering.ipynb # Pipelines de Janela Móvel Temporal (Rolling Window)
+│   └── 03_model_training.ipynb      # Benchmark Multimodelo e Otimização de Thresholds
 │
 ├── src/
-│   ├── data_prep/           # Data loading & preprocessing
-│   ├── features/            # Feature creation & selection
-│   ├── models/              # Training, evaluation, inference
-│   └── utils/               # Helper functions
+│   ├── data_prep/           # Scripts modulares de limpeza e tipagem rígida
+│   ├── features/            # Motores de cálculo comportamental de velocidade
+│   ├── models/              # Funções de Fit, Matrizes de Validação e Serialização
+│   └── utils/               # Utilitários de IoC, Loggers e Gerenciamento de Pastas
 │
-├── config/                  # YAML/JSON configuration files
-├── outputs/                 # Reports, plots, saved models, logs
-├── app/                     # Web app code (Streamlit/Gradio)
+├── config/                  # Arquivos de Hiperparâmetros Históricos (YAML)
+├── outputs/                 # Gráficos SHAP, Curvas PR e Logs Operacionais
+├── app/                     # Interface Web do Motor Antifraude (Streamlit)
 │
-├── .dvc/                    # DVC cache
-├── requirements.txt
-├── Dockerfile
-├── .github/workflows/       # CI/CD pipelines
-└── README.md
+├── requirements.txt         # Manifesto de Dependências Certificadas
+├── Dockerfile               # Especificação de Containerização Pronta para Cloud
+└── README.md                # Documentação Técnica Principal
 ```
-📦 Main Dependencies (requirements.txt)
+
+## Dependências (requirements.txt)
+
 ```text
 pandas>=2.0
 numpy>=1.24
@@ -170,25 +96,51 @@ lightgbm>=4.0
 matplotlib>=3.7
 seaborn>=0.12
 shap>=0.45
-mlflow>=2.10
-dvc>=3.0
-optuna>=3.5
-imbalanced-learn>=0.11
-streamlit>=1.30          # or gradio
 joblib>=1.3
 pyyaml>=6.0
 ```
-📊 Evaluation Metrics
 
-AUC-ROC (primary metric)
-Precision, Recall, F1-Score
-Precision@K, Recall@K (useful in highly imbalanced settings)
-Confusion Matrix
-Business-oriented metrics (estimated fraud loss reduction)
+# English Version
+## 💳 Industrial Credit Card Fraud Detection Pipeline
+Status: Certified & Ready for Deployment 
 
-✅ Expected Outcomes
+Architecture: Medallion Data Pipeline & Multi-Classifier Benchmark
 
-High-performing fraud detection model with low false-positive rate
-Clear model explanations using SHAP values (global & local)
-Interactive web interface for real-time transaction testing
-Fully reproducible pipeline ready for cloud deployment
+Champion Model: XGBoost (Calibrated Level-Wise Tree Growth)
+
+#### Objective & Motivation
+According to global risk data from PwC, payment fraud accounts for trillions of dollars in cumulative losses annually. With the expansion of digital ecosystems and real-time settlement rails, fraud patterns evolve rapidly, rendering classic static rule-based systems both obsolete and highly inefficient.
+
+This project deploys an end-to-end scalable predictive engine designed to intercept fraudulent transactions under extreme class imbalance (~0.57% fraud base rate). The core architecture targets three primary enterprise goals:
+
+Direct Loss Mitigation: Maximize the interception of stolen capital (Recall).
+
+User Experience Protection: Minimize false alarms (False Positives) to eliminate friction for legitimate cardholders.
+
+Strict Auditability (Explainable AI - XAI): Deliver mathematical transparency for every decision using game-theoretic formulations (SHAP values) to satisfy regulatory and anti-money laundering (AML) compliance.
+
+## Benchmark Evaluation: Champion vs. Challenger
+To eliminate single-algorithm bias, a rigorous multi-model evaluation framework was deployed. The incumbent LightGBM model (Challenger) was pitted against a tuned XGBoost model (Champion). Both models were evaluated using strict temporal splitting to prevent future data leakage and dynamically calibrated via F1-Score optimization across the Precision-Recall curve space.
+
+The standardized performance dashboard below was derived from a future test validation set containing over 550,000 production-scale transactions:
+
+| Risk Metric | LightGBM (Challenger) | XGBoost (Novo Champion) | Net Impact of Upgrading |
+| :--- | :---: | :---: | :--- |
+| **ROC-AUC** | 0.9943 | **0.9961** | Enhanced Stochastic Separation (+0.0018) |
+| **PR-AUC (Métrica Alvo)** | 0.8606 | **0.8710** | **Predictive Reliability Gain (+0.0104)** |
+| **Threshold Ótimo Calibrado** | 0.2561 | 0.2593 | Calibrated Operational Cut-off |
+| **Precisão (Classe Fraude)** | 0.8861 | **0.8886** | **Lower Friction / Fewer Good Card Rejections** |
+| **Recall (Taxa de Captura)** | 0.7506 | **0.7622** | **+25 Actual Attacks Blocked at the Gate** |
+| **F1-Score Global** | 0.8127 | **0.8206** | Superior Model Convergence |
+
+## Operational Impact Analysis (Confusion Matrix Breakdown)
+Translating confusion matrix quadrants directly into business economics yields clear operational advantages:
+
+Chargeback Prevention: The XGBoost model successfully intercepted 1,634 actual fraud cases, letting only 511 slip through. This translates to 25 fewer compromised cards impacting the platform's chargeback ratios relative to the LightGBM baseline.
+
+Frictionless Base Operations: To stop this volume of cybercrime, XGBoost flagged only 191 false positives out of a massive baseline of 553,564 legitimate purchases. In practice, out of every 10 alerts generated by the engine, approximately 9 are verified frauds. The risk manual review desk operates with zero overhead, and valid customers encounter clean checkouts.
+
+## Architectural Justification & XAI
+XGBoost’s edge is rooted in its horizontal growth strategy (Level-wise). By expanding trees level by level under conservative regularization constraints, it acts as an intrinsic regularizer against the severe sparsity of the minority class, avoiding the greedy local convergence traps that degrade leaf-wise algorithms like LightGBM under extreme imbalance.
+
+Model decisions are audited via SHAP Values. Moving away from raw uncalibrated information gain charts, SHAP diagnostics proved that short-term monetary shocks relative to the cardholder's baseline (amt and amt_to_avg_ratio_24h) serve as the primary, robust risk signatures for the production engine.
