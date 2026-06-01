@@ -124,7 +124,7 @@ To eliminate single-algorithm bias, a rigorous multi-model evaluation framework 
 
 The standardized performance dashboard below was derived from a future test validation set containing over 550,000 production-scale transactions:
 
-| Risk Metric | LightGBM (Challenger) | XGBoost (Novo Champion) | Net Impact of Upgrading |
+| Risk Metric | LightGBM (Challenger) | XGBoost (New Champion) | Net Impact of Upgrading |
 | :--- | :---: | :---: | :--- |
 | **ROC-AUC** | 0.9943 | **0.9961** | Enhanced Stochastic Separation (+0.0018) |
 | **PR-AUC (Métrica Alvo)** | 0.8606 | **0.8710** | **Predictive Reliability Gain (+0.0104)** |
